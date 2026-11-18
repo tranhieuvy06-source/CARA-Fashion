@@ -1,0 +1,27 @@
+﻿@{
+    ViewBag.Title = "Đặt hàng thành công";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-5 text-center" style="max-width: 600px;">
+    <div class="card shadow border-0 p-5">
+        <div class="mb-3">
+            <span class="display-1 text-success">&check;</span>
+        </div>
+        <h2 class="fw-bold text-uppercase text-success mb-3">Đặt Hàng Thành Công!</h2>
+        <p class="fs-5 text-secondary">Cảm ơn bạn đã mua sắm tại <strong>Cara Fashion</strong>.</p>
+
+        @if (ViewBag.MaDonHang != null)
+        {
+            <div class="alert alert-secondary my-3">
+                Mã đơn hàng của bạn: <strong class="text-dark">#@ViewBag.MaDonHang</strong>
+            </div>
+        }
+
+        <p class="text-muted small">Chúng tôi sẽ liên hệ qua số điện thoại của bạn để xác nhận đơn hàng trong thời gian sớm nhất.</p>
+
+        <div class="mt-4">
+            <a href="@Url.Action("Index", "Home")" class="btn btn-dark btn-lg px-4">Tiếp tục mua sắm</a>
+        </div>
+    </div>
+</div>

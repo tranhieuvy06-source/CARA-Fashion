@@ -1,0 +1,141 @@
+﻿@model IEnumerable<WebsiteCara.Models.NguoiDung>
+@{
+    ViewBag.Title = "Quản lý Người dùng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var vaiTros = ViewBag.VaiTros as List<WebsiteCara.Models.VaiTro>;
+    int currentUserId = ViewBag.CurrentUserId;
+    int? roleFilter = ViewBag.Role as int?;
+}
+
+<div class="container my-4">
+    <h3 class="fw-bold text-uppercase mb-4">Quản Lý Người Dùng &amp; Phân Quyền</h3>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Tìm kiếm / lọc -->
+    <form method="get" action="@Url.Action("Index", "NguoiDung", new { area = "Admin" })" class="row g-2 mb-3">
+        <div class="col-md-5">
+            <input type="text" name="q" value="@ViewBag.Q" class="form-control" placeholder="Tìm theo tên, email, số điện thoại..." />
+        </div>
+        <div class="col-md-3">
+            <select name="role" class="form-select">
+                <option value="">Tất cả vai trò</option>
+                @foreach (var vt in vaiTros)
+                {
+                    <option value="@vt.MaVaiTro" @(roleFilter == vt.MaVaiTro ? "selected" : "")>@vt.TenVaiTro</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-dark">Lọc</button>
+        </div>
+    </form>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center">Mã</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>SĐT</th>
+                            <th style="min-width: 260px;">Vai trò</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th class="text-center">Tài khoản</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var u in Model)
+                            {
+                                bool isSelf = u.MaNguoiDung == currentUserId;
+                                <tr>
+                                    <td class="text-center fw-bold">@u.MaNguoiDung</td>
+                                    <td>
+                                        <strong>@u.HoTen</strong>
+                                        @if (isSelf)
+                                        {
+                                            <span class="badge bg-info text-dark ms-1">Bạn</span>
+                                        }
+                                    </td>
+                                    <td>@u.Email</td>
+                                    <td>@u.DienThoai</td>
+                                    <td>
+                                        @if (isSelf)
+                                        {
+                                            <span class="badge bg-primary">@(u.VaiTro != null ? u.VaiTro.TenVaiTro : "")</span>
+                                        }
+                                        else
+                                        {
+                                            using (Html.BeginForm("UpdateRole", "NguoiDung", new { area = "Admin" }, FormMethod.Post, new { @class = "d-flex gap-2 m-0" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", u.MaNguoiDung)
+                                                <select name="maVaiTro" class="form-select form-select-sm">
+                                                    @foreach (var vt in vaiTros)
+                                                    {
+                                                        <option value="@vt.MaVaiTro" @(u.MaVaiTro == vt.MaVaiTro ? "selected" : "")>@vt.TenVaiTro</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-primary text-nowrap">Lưu</button>
+                                            }
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (u.TrangThai == true)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Đã khóa</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!isSelf)
+                                        {
+                                            using (Html.BeginForm("ToggleStatus", "NguoiDung", new { area = "Admin", id = u.MaNguoiDung }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Xác nhận thay đổi trạng thái tài khoản này?');" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                if (u.TrangThai == true)
+                                                {
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Khóa</button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="submit" class="btn btn-sm btn-outline-success">Mở khóa</button>
+                                                }
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">Không tìm thấy người dùng nào.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

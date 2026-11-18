@@ -1,0 +1,113 @@
+﻿@model WebsiteCara.Models.DonHang
+@{
+    ViewBag.Title = "Chi tiết Đơn hàng #" + Model.MaDonHang;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var chiTiets = ViewBag.ChiTietDonHang as List<WebsiteCara.Models.ChiTietDonHang>;
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-uppercase">Chi Tiết Đơn Hàng #@Model.MaDonHang</h3>
+        <a href="@Url.Action("Index", "DonHang", new { area = "Admin" })" class="btn btn-outline-secondary">← Quay lại danh sách</a>
+    </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+    <div class="row">
+        <!-- Thông tin người nhận và cập nhật trạng thái -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-dark text-white fw-bold">Thông Tin Giao Hàng</div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Người nhận:</strong> @(Model.NguoiDung != null ? Model.NguoiDung.HoTen : "N/A")</p>
+                    <p class="mb-1"><strong>Số điện thoại:</strong> @(Model.NguoiDung != null ? Model.NguoiDung.DienThoai : "N/A")</p>
+                    <p class="mb-1"><strong>Địa chỉ:</strong> @Model.DiaChiGiaoHang</p>
+                    <p class="mb-0"><strong>Ngày đặt:</strong> @string.Format("{0:dd/MM/yyyy HH:mm}", Model.NgayDat)</p>
+                </div>
+            </div>
+
+            <!-- Form Cập nhật trạng thái -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold">Cập Nhật Trạng Thái</div>
+                <div class="card-body">
+                    @using (Html.BeginForm("UpdateStatus", "DonHang", new { area = "Admin" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("id", Model.MaDonHang)
+                        var daKetThuc = Model.TrangThai == "Đã hủy" || Model.TrangThai == "Hoàn thành" || Model.TrangThai == "Đã hoàn thành";
+                        <div class="mb-3">
+                            <select name="trangThai" class="form-select" @(daKetThuc ? "disabled" : "")>
+                                <option value="Chờ xử lý" @(Model.TrangThai == "Chờ xử lý" ? "selected" : "")>Chờ xử lý</option>
+                                <option value="Đã duyệt" @(Model.TrangThai == "Đã duyệt" ? "selected" : "")>Đã duyệt</option>
+                                <option value="Đang giao" @(Model.TrangThai == "Đang giao" ? "selected" : "")>Đang giao</option>
+                                <option value="Hoàn thành" @(Model.TrangThai == "Hoàn thành" ? "selected" : "")>Hoàn thành</option>
+                                <option value="Đã hủy" @(Model.TrangThai == "Đã hủy" ? "selected" : "")>Đã hủy</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold" @(daKetThuc ? "disabled" : "")>Lưu trạng thái</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách mặt hàng -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold">Sản Phẩm Đã Đặt</div>
+                <div class="card-body p-0">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th class="text-center">Phân loại</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (chiTiets != null && chiTiets.Any())
+                            {
+                                foreach (var item in chiTiets)
+                                {
+                                    var thanhTien = item.SoLuong * item.DonGia;
+                                    var sp = item.ChiTietSanPham?.SanPham;
+                                    var size = item.ChiTietSanPham?.KichThuoc?.TenKichThuoc;
+                                    var mau = item.ChiTietSanPham?.MauSac?.TenMauSac;
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">@(sp != null ? sp.TenSanPham : "Sản phẩm #" + item.MaChiTietSP)</div>
+                                        </td>
+                                        <td class="text-center"><small class="badge bg-light text-dark border">@size / @mau</small></td>
+                                        <td class="text-center">@item.SoLuong</td>
+                                        <td class="text-end">@string.Format("{0:N0} đ", item.DonGia)</td>
+                                        <td class="text-end fw-bold text-danger">@string.Format("{0:N0} đ", thanhTien)</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-end fw-bold fs-5">Tổng tiền thanh toán:</td>
+                                <td class="text-end fw-bold fs-5 text-danger">@string.Format("{0:N0} đ", Model.TongTien)</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

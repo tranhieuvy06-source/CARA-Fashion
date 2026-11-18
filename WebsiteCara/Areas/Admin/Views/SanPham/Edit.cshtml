@@ -1,0 +1,71 @@
+﻿@model WebsiteCara.Models.SanPham
+
+@{
+    ViewBag.Title = "Chỉnh Sửa Sản Phẩm";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-4" style="max-width: 700px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-uppercase">Sửa Sản Phẩm #@Model.MaSanPham</h3>
+        <a href="@Url.Action("Index", "SanPham", new { area = "Admin" })" class="btn btn-outline-secondary">← Quay lại</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            @using (Html.BeginForm("Edit", "SanPham", new { area = "Admin" }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.MaSanPham)
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                    @Html.DropDownListFor(m => m.MaDanhMuc, (SelectList)ViewBag.DanhMucList, "-- Chọn danh mục --", new { @class = "form-select", required = "required" })
+                    @Html.ValidationMessageFor(m => m.MaDanhMuc, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.TenSanPham, new { @class = "form-control", required = "required" })
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Giá gốc (VNĐ) <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.GiaGoc, new { @class = "form-control", type = "number", min = "0", step = "1000", required = "required" })
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Giá khuyến mãi (VNĐ)</label>
+                    @Html.TextBoxFor(m => m.GiaKhuyenMai, new { @class = "form-control", type = "number", min = "0", step = "1000", placeholder = "Để trống nếu không giảm giá" })
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Hình ảnh hiện tại</label>
+                    <div class="mb-2">
+                        <img src="@WebsiteCara.Helpers.ImageHelper.Url(Url, Model.HinhAnhChinh)" style="height: 100px; object-fit: cover;" class="rounded border" onerror="this.src='https://picsum.photos/100/100'" />
+                    </div>
+                    <label class="form-label fw-bold">Thay đổi ảnh mới (Nếu có)</label>
+                    <input type="file" name="HinhAnhFile" class="form-control" accept="image/*" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Trạng thái hiển thị</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="TrangThai" value="true" id="flexSwitchCheckChecked" @(Model.TrangThai == true ? "checked" : "")>
+                        <label class="form-check-label" for="flexSwitchCheckChecked">Đang bán</label>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Mô tả sản phẩm</label>
+                    @Html.TextAreaFor(m => m.MoTa, new { @class = "form-control", rows = "4" })
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-warning btn-lg fw-bold">Cập Nhật Sản Phẩm</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>

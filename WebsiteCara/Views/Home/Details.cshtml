@@ -1,0 +1,187 @@
+﻿@model WebsiteCara.Models.SanPham
+
+@{
+    ViewBag.Title = Model.TenSanPham + " - Thời trang Cara";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var dsSize = ViewBag.DanhSachSize as List<string>;
+    var dsMau = ViewBag.DanhSachMau as List<string>;
+    var bienThe = ViewBag.BienThe as List<WebsiteCara.Models.ChiTietSanPham>;
+
+    // Đồng bộ logic xử lý ảnh thông minh giống hệt Trang chủ (Index.cshtml)
+    string imgUrl = Model.HinhAnhChinh;
+    if (string.IsNullOrEmpty(imgUrl))
+    {
+        imgUrl = Url.Content("~/Content/images/default.jpg");
+    }
+    else if (!imgUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+             !imgUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    {
+        imgUrl = Url.Content("~/Content/images/" + imgUrl);
+    }
+}
+
+<div class="container my-5">
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+    <div class="row">
+        <!-- Cột trái: Ảnh sản phẩm chính -->
+        <div class="col-md-5 mb-4">
+            <img src="@imgUrl"
+                 class="img-fluid rounded shadow-sm w-100"
+                 alt="@Model.TenSanPham"
+                 onerror="this.onerror=null; this.src='https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?auto=compress&cs=tinysrgb&w=600';">
+        </div>
+
+        <!-- Cột phải: Thông tin & Lựa chọn -->
+        <div class="col-md-7">
+            <h2 class="fw-bold mb-3">@Model.TenSanPham</h2>
+
+            <!-- Hiển thị giá -->
+            <div class="mb-3">
+                @if (Model.GiaKhuyenMai.HasValue && Model.GiaKhuyenMai > 0)
+                {
+                    <span class="fs-3 text-danger fw-bold me-3">@string.Format("{0:N0} đ", Model.GiaKhuyenMai)</span>
+                    <span class="fs-5 text-muted text-decoration-line-through">@string.Format("{0:N0} đ", Model.GiaGoc)</span>
+                }
+                else
+                {
+                    <span class="fs-3 text-dark fw-bold">@string.Format("{0:N0} đ", Model.GiaGoc)</span>
+                }
+            </div>
+
+            <p class="text-secondary mb-4">@Model.MoTa</p>
+
+            <!-- Form chọn biến thể và Thêm vào giỏ hàng -->
+            @using (Html.BeginForm("AddToCart", "Cart", FormMethod.Post))
+            {
+                @Html.Hidden("maSanPham", Model.MaSanPham)
+
+                <!-- Chọn Màu sắc -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Màu sắc:</label>
+                    <div class="d-flex gap-2">
+                        @if (dsMau != null && dsMau.Any())
+                        {
+                            int mi = 0;
+                            foreach (var mau in dsMau)
+                            {
+                                mi++;
+                                <input type="radio" class="btn-check" name="mauSac" id="mau_@mi" value="@mau" autocomplete="off" required>
+                                <label class="btn btn-outline-secondary btn-sm px-3" for="mau_@mi">@mau</label>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Tạm hết hàng</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Chọn Kích thước (Size) -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Kích thước (Size):</label>
+                    <div class="d-flex gap-2">
+                        @if (dsSize != null && dsSize.Any())
+                        {
+                            int si = 0;
+                            foreach (var size in dsSize)
+                            {
+                                si++;
+                                <input type="radio" class="btn-check" name="kichThuoc" id="size_@si" value="@size" autocomplete="off" required>
+                                <label class="btn btn-outline-dark btn-sm px-3" for="size_@si">@size</label>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted small">Tạm hết hàng</span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Chọn Số lượng -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Số lượng:</label>
+                    <input type="number" name="soLuong" id="soLuongInput" value="1" min="1" max="99" class="form-control w-25" required>
+                    <small id="tonKhoInfo" class="text-muted"></small>
+                </div>
+
+                <!-- Nút thao tác -->
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-dark btn-lg px-4">
+                        Thêm vào giỏ hàng
+                    </button>
+                </div>
+            }
+
+            <!-- Dữ liệu tồn kho từng biến thể cho script bên dưới -->
+            <div id="bienTheData" class="d-none">
+                @if (bienThe != null)
+                {
+                    foreach (var v in bienThe)
+                    {
+                        <span data-size="@v.KichThuoc.TenKichThuoc" data-mau="@v.MauSac.TenMauSac" data-ton="@v.SoLuongTon"></span>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        (function () {
+            var spans = document.querySelectorAll('#bienTheData span');
+            var data = Array.prototype.map.call(spans, function (s) {
+                return { size: s.getAttribute('data-size'), mau: s.getAttribute('data-mau'), ton: parseInt(s.getAttribute('data-ton'), 10) };
+            });
+            var sizes = document.querySelectorAll('input[name=kichThuoc]');
+            var maus = document.querySelectorAll('input[name=mauSac]');
+            var qty = document.getElementById('soLuongInput');
+            var info = document.getElementById('tonKhoInfo');
+
+            function selected(list) {
+                for (var i = 0; i < list.length; i++) { if (list[i].checked) return list[i].value; }
+                return null;
+            }
+
+            function refresh() {
+                var s = selected(sizes), m = selected(maus);
+
+                // Khóa size không có hàng ở màu đang chọn
+                Array.prototype.forEach.call(sizes, function (inp) {
+                    var ok = data.some(function (d) { return d.size === inp.value && (!m || d.mau === m); });
+                    inp.disabled = !ok;
+                    if (!ok && inp.checked) inp.checked = false;
+                });
+                // Khóa màu không có hàng ở size đang chọn
+                Array.prototype.forEach.call(maus, function (inp) {
+                    var ok = data.some(function (d) { return d.mau === inp.value && (!s || d.size === s); });
+                    inp.disabled = !ok;
+                    if (!ok && inp.checked) inp.checked = false;
+                });
+
+                s = selected(sizes); m = selected(maus);
+                if (s && m) {
+                    var v = data.filter(function (d) { return d.size === s && d.mau === m; })[0];
+                    if (v) {
+                        qty.max = v.ton;
+                        if (parseInt(qty.value, 10) > v.ton) qty.value = v.ton;
+                        info.textContent = 'Còn ' + v.ton + ' sản phẩm';
+                        return;
+                    }
+                }
+                qty.max = 99;
+                info.textContent = '';
+            }
+
+            Array.prototype.forEach.call(sizes, function (i) { i.addEventListener('change', refresh); });
+            Array.prototype.forEach.call(maus, function (i) { i.addEventListener('change', refresh); });
+            refresh();
+        })();
+    </script>
+}

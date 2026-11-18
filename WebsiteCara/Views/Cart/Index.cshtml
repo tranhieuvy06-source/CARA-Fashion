@@ -1,0 +1,303 @@
+﻿@model IEnumerable<WebsiteCara.Models.CartItem>
+@{
+    ViewBag.Title = "Giỏ hàng của bạn";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-5">
+    <h3 class="fw-bold mb-4 text-uppercase">Giỏ Hàng Của Bạn</h3>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center py-4">
+            <p class="mb-3 fs-5">Giỏ hàng của bạn đang trống!</p>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-dark">Tiếp tục mua sắm</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Phân loại</th>
+                        <th>Đơn giá</th>
+                        <th>Số lượng</th>
+                        <th>Thành tiền</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="@WebsiteCara.Helpers.ImageHelper.Url(Url, item.HinhAnh)" style="width: 60px; height: 60px; object-fit: cover;" class="rounded" onerror="this.src='https://picsum.photos/60/60'">
+                                    <span class="fw-bold">@item.TenSanPham</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary me-1">Size: @item.KichThuoc</span>
+                                <span class="badge bg-outline-dark text-dark border">Màu: @item.MauSac</span>
+                            </td>
+                            <td>@string.Format("{0:N0} đ", item.Gia)</td>
+                            <td>@item.SoLuong</td>
+                            <td class="fw-bold text-danger">@string.Format("{0:N0} đ", item.ThanhTien)</td>
+                            <td>
+                                <a href="@Url.Action("Remove", "Cart", new { maSanPham = item.MaSanPham, kichThuoc = item.KichThuoc, mauSac = item.MauSac })"
+                                   class="btn btn-outline-danger btn-sm" onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?');">
+                                    Xóa
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row mt-4 align-items-center">
+            <div class="col-md-6">
+                <a href="@Url.Action("Index", "Home")" class="btn btn-outline-dark">
+                    &larr; Tiếp tục mua sắm
+                </a>
+            </div>
+            <div class="col-md-6 text-end">
+                <h4 class="mb-3">Tổng tiền: <span class="text-danger fw-bold">@string.Format("{0:N0} đ", ViewBag.TongTien)</span></h4>
+                <a href="@Url.Action("Checkout", "Order")" class="btn btn-dark btn-lg px-5">
+                    Tiến hành Đặt hàng
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ================= TÍCH HỢP CHATBOT HỖ TRỢ ================= -->
+<style>
+    /* Nút tròn bật Chatbot */
+    .chatbot-toggle-btn {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #212529;
+        color: #fff;
+        border: none;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        cursor: pointer;
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        transition: transform 0.3s ease;
+    }
+
+        .chatbot-toggle-btn:hover {
+            transform: scale(1.1);
+        }
+
+    /* Khung Chatbot */
+    .chatbot-window {
+        position: fixed;
+        bottom: 95px;
+        right: 25px;
+        width: 350px;
+        max-width: 90vw;
+        height: 480px;
+        background-color: #fff;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 1050;
+        border: 1px solid #e0e0e0;
+    }
+
+    /* Header Chatbot */
+    .chatbot-header {
+        background-color: #212529;
+        color: #fff;
+        padding: 12px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Thân tin nhắn */
+    .chatbot-body {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .chat-msg {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 15px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+        .chat-msg.bot {
+            background-color: #e9ecef;
+            color: #212529;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-msg.user {
+            background-color: #212529;
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+    /* Gợi ý nhanh */
+    .chat-quick-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 5px;
+    }
+
+    .chat-quick-btn {
+        background-color: #fff;
+        border: 1px solid #0d6efd;
+        color: #0d6efd;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .chat-quick-btn:hover {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+
+    /* Footer nhập liệu */
+    .chatbot-footer {
+        padding: 10px;
+        background-color: #fff;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 8px;
+    }
+</style>
+
+<!-- Nút mở khung chat -->
+<button class="chatbot-toggle-btn" id="btnToggleChat" title="Hỗ trợ trực tuyến">
+    💬
+</button>
+
+<!-- Khung cửa sổ chat -->
+<div class="chatbot-window" id="chatbotWindow">
+    <div class="chatbot-header">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold">Cara Tư Vấn</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white small" id="btnCloseChat"></button>
+    </div>
+
+    <div class="chatbot-body" id="chatBody">
+        <div class="chat-msg bot">
+            Xin chào! Tôi có thể giúp gì cho bạn về đơn hàng hoặc các sản phẩm thời trang Cara?
+        </div>
+        <div class="chat-quick-suggestions">
+            <button class="chat-quick-btn" onclick="sendQuickMsg('Cách thức thanh toán?')">Thanh toán thế nào?</button>
+            <button class="chat-quick-btn" onclick="sendQuickMsg('Phí vận chuyển bao nhiêu?')">Phí vận chuyển?</button>
+            <button class="chat-quick-btn" onclick="sendQuickMsg('Thời gian giao hàng?')">Thời gian giao hàng?</button>
+        </div>
+    </div>
+
+    <div class="chatbot-footer">
+        <input type="text" id="chatInput" class="form-control form-control-sm" placeholder="Nhập tin nhắn..." onkeypress="handleChatKeyPress(event)" />
+        <button type="button" class="btn btn-dark btn-sm px-3" onclick="sendUserMsg()">Gửi</button>
+    </div>
+</div>
+
+<script>
+        // Ẩn / Hiện khung chat
+        const btnToggleChat = document.getElementById('btnToggleChat');
+        const btnCloseChat = document.getElementById('btnCloseChat');
+        const chatbotWindow = document.getElementById('chatbotWindow');
+
+        btnToggleChat.addEventListener('click', function () {
+            if (chatbotWindow.style.display === 'flex') {
+                chatbotWindow.style.display = 'none';
+            } else {
+                chatbotWindow.style.display = 'flex';
+                document.getElementById('chatInput').focus();
+            }
+        });
+
+        btnCloseChat.addEventListener('click', function () {
+            chatbotWindow.style.display = 'none';
+        });
+
+        function handleChatKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendUserMsg();
+            }
+        }
+
+        function sendUserMsg() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (text !== '') {
+                appendMessage(text, 'user');
+                input.value = '';
+                processBotReply(text);
+            }
+        }
+
+        function sendQuickMsg(text) {
+            appendMessage(text, 'user');
+            processBotReply(text);
+        }
+
+        function appendMessage(text, sender) {
+            const chatBody = document.getElementById('chatBody');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-msg ' + sender;
+            msgDiv.innerText = text;
+            chatBody.appendChild(msgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        // Xử lý phản hồi tự động của Bot
+        function processBotReply(userText) {
+            let reply = "Cảm ơn bạn đã liên hệ! Bạn có thể nhấn nút 'Tiến hành Đặt hàng' để hoàn tất đơn hàng hoặc gọi hotline 0375546662 để hỗ trợ gấp.";
+            const lower = userText.toLowerCase();
+
+            if (lower.includes('thanh toán') || lower.includes('qr') || lower.includes('chuyển khoản')) {
+                reply = "Cara hỗ trợ thanh toán khi nhận hàng (COD) và chuyển khoản qua mã VietQR MBBank tự động khi bạn bấm 'Tiến hành Đặt hàng'.";
+            } else if (lower.includes('vận chuyển') || lower.includes('ship') || lower.includes('phí')) {
+                reply = "Cara miễn phí vận chuyển cho đơn hàng từ 500.000đ. Phí giao hàng tiêu chuẩn toàn quốc là 30.000đ.";
+            } else if (lower.includes('thời gian') || lower.includes('mấy ngày') || lower.includes('bao lâu')) {
+                reply = "Thời gian giao hàng từ 1-3 ngày làm việc tùy thuộc vào tỉnh thành của bạn.";
+            }
+
+            setTimeout(function () {
+                appendMessage(reply, 'bot');
+            }, 600);
+        }
+</script>

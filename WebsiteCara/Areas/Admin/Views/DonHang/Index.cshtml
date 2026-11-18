@@ -1,0 +1,112 @@
+﻿@model IEnumerable<WebsiteCara.Models.DonHang>
+@{
+    ViewBag.Title = "Quản lý Đơn hàng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container my-4">
+    <h3 class="fw-bold text-uppercase mb-4">Quản Lý Đơn Hàng</h3>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center">Mã ĐH</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th class="text-center">Trạng thái hiện tại</th>
+                            <th class="text-center" style="min-width: 280px;">Thao tác / Đổi trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-center fw-bold">#@item.MaDonHang</td>
+                                    <td>
+                                        <strong>@(item.NguoiDung != null ? item.NguoiDung.HoTen : "Khách vãng lai")</strong>
+                                        <br /><small class="text-muted">SDT: @(item.NguoiDung != null ? item.NguoiDung.DienThoai : "N/A")</small>
+                                    </td>
+                                    <td>@string.Format("{0:dd/MM/yyyy HH:mm}", item.NgayDat)</td>
+                                    <td class="text-danger fw-bold">@string.Format("{0:N0} đ", item.TongTien)</td>
+                                    <td class="text-center">
+                                        @if (item.TrangThai == "Chờ xử lý")
+                                        {
+                                            <span class="badge bg-warning text-dark">Chờ xử lý</span>
+                                        }
+                                        else if (item.TrangThai == "Đã duyệt" || item.TrangThai == "Đang giao")
+                                        {
+                                            <span class="badge bg-primary">@item.TrangThai</span>
+                                        }
+                                        else if (item.TrangThai == "Hoàn thành" || item.TrangThai == "Đã hoàn thành")
+                                        {
+                                            <span class="badge bg-success">Hoàn thành</span>
+                                        }
+                                        else if (item.TrangThai == "Đã hủy")
+                                        {
+                                            <span class="badge bg-danger">Đã hủy</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@item.TrangThai</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-center gap-2">
+                                            <!-- Nút xem chi tiết -->
+                                            <a href="@Url.Action("Details", "DonHang", new { area = "Admin", id = item.MaDonHang })" class="btn btn-sm btn-info text-white">
+                                                Chi tiết
+                                            </a>
+
+                                            <!-- Dropdown đổi trạng thái nhanh -->
+                                            @using (Html.BeginForm("UpdateStatus", "DonHang", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline-block m-0" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", item.MaDonHang)
+                                                @Html.Hidden("from", "list")
+                                                var daKetThuc = item.TrangThai == "Đã hủy" || item.TrangThai == "Hoàn thành" || item.TrangThai == "Đã hoàn thành";
+                                                <select name="trangThai" class="form-select form-select-sm" style="width: 130px;" onchange="this.form.submit()" @(daKetThuc ? "disabled" : "")>
+                                                    <option value="Chờ xử lý" @(item.TrangThai == "Chờ xử lý" ? "selected" : "")>Chờ xử lý</option>
+                                                    <option value="Đã duyệt" @(item.TrangThai == "Đã duyệt" ? "selected" : "")>Đã duyệt</option>
+                                                    <option value="Đang giao" @(item.TrangThai == "Đang giao" ? "selected" : "")>Đang giao</option>
+                                                    <option value="Hoàn thành" @(item.TrangThai == "Hoàn thành" || item.TrangThai == "Đã hoàn thành" ? "selected" : "")>Hoàn thành</option>
+                                                    <option value="Đã hủy" @(item.TrangThai == "Đã hủy" ? "selected" : "")>Đã hủy</option>
+                                                </select>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Chưa có đơn hàng nào trong hệ thống.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

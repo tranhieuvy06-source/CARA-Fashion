@@ -1,0 +1,96 @@
+﻿@model IEnumerable<WebsiteCara.Models.SanPham>
+@{
+    var tonKho = ViewBag.TonKho as Dictionary<int, int>;
+    ViewBag.Title = "Quản lý Sản phẩm";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Sử dụng chung Layout trang chính hoặc Layout Admin
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-uppercase">Quản Lý Sản Phẩm</h3>
+        <a href="@Url.Action("Create", "SanPham", new { area = "Admin" })" class="btn btn-success fw-bold">+ Thêm Sản Phẩm Mới</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center">Mã</th>
+                        <th>Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Giá bán</th>
+                        <th class="text-center">Tồn kho</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="text-center fw-bold">@item.MaSanPham</td>
+                            <td>
+                                <img src="@WebsiteCara.Helpers.ImageHelper.Url(Url, item.HinhAnhChinh)"
+                                     style="width: 50px; height: 50px; object-fit: cover;" class="rounded" onerror="this.src='https://picsum.photos/50/50'" />
+                            </td>
+                            <td class="fw-bold">@item.TenSanPham</td>
+                            <td class="text-danger fw-bold">@string.Format("{0:N0} đ", item.GiaGoc)</td>
+                            <td class="text-center">
+                                @{ int ton = (tonKho != null && tonKho.ContainsKey(item.MaSanPham)) ? tonKho[item.MaSanPham] : 0; }
+                                @if (ton > 0)
+                                {
+                                    <span class="badge bg-success">@ton</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Hết hàng / chưa có size</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (item.TrangThai == true)
+                                {
+                                    <span class="badge bg-success">Đang bán</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Đã ẩn</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a href="@Url.Action("Index", "BienThe", new { area = "Admin", id = item.MaSanPham })" class="btn btn-sm btn-info text-white me-1">Size/Màu/Kho</a>
+                                <a href="@Url.Action("Edit", "SanPham", new { area = "Admin", id = item.MaSanPham })" class="btn btn-sm btn-warning me-1">Sửa</a>
+
+                                @using (Html.BeginForm("Delete", "SanPham", new { area = "Admin", id = item.MaSanPham }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Bạn có chắc chắn muốn ẩn sản phẩm này?');" }))
+                                {
+                                    <button type="submit" class="btn btn-sm btn-secondary">Ẩn</button>
+                                }
+
+                                @using (Html.BeginForm("Remove", "SanPham", new { area = "Admin", id = item.MaSanPham }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('XÓA HẲN sản phẩm này? Thao tác không thể hoàn tác.');" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-danger">Xóa</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

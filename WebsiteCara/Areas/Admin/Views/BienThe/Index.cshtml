@@ -1,0 +1,160 @@
+﻿@model IEnumerable<WebsiteCara.Models.ChiTietSanPham>
+@{
+    var sp = ViewBag.SanPham as WebsiteCara.Models.SanPham;
+    var kichThuocs = ViewBag.KichThuocs as List<WebsiteCara.Models.KichThuoc>;
+    var mauSacs = ViewBag.MauSacs as List<WebsiteCara.Models.MauSac>;
+    ViewBag.Title = "Size, màu & tồn kho - " + sp.TenSanPham;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    int tongTon = Model.Sum(c => c.SoLuongTon);
+}
+
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold text-uppercase mb-1">Size, màu &amp; tồn kho</h3>
+            <div class="text-muted">Sản phẩm #@sp.MaSanPham - <strong>@sp.TenSanPham</strong> | Tổng tồn: <strong>@tongTon</strong></div>
+        </div>
+        <a href="@Url.Action("Index", "SanPham", new { area = "Admin" })" class="btn btn-outline-secondary">← Quay lại danh sách</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Danh sách biến thể -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white fw-bold">Các biến thể hiện có</div>
+                <div class="card-body p-0">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Size</th>
+                                <th>Màu</th>
+                                <th style="width: 220px;">Tồn kho</th>
+                                <th class="text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Any())
+                            {
+                                foreach (var ct in Model)
+                                {
+                                    <tr>
+                                        <td><span class="badge bg-dark">@ct.KichThuoc.TenKichThuoc</span></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(ct.MauSac.MaMauHex))
+                                            {
+                                                <span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #999;background:@ct.MauSac.MaMauHex;vertical-align:middle;"></span>
+                                            }
+                                            @ct.MauSac.TenMauSac
+                                        </td>
+                                        <td>
+                                            @using (Html.BeginForm("UpdateStock", "BienThe", new { area = "Admin" }, FormMethod.Post, new { @class = "d-flex gap-2 m-0" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", ct.MaChiTietSP)
+                                                <input type="number" name="soLuongTon" value="@ct.SoLuongTon" min="0" class="form-control form-control-sm" style="width: 90px;" required />
+                                                <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+                                                if (ct.SoLuongTon == 0)
+                                                {
+                                                    <span class="badge bg-secondary align-self-center">Hết hàng</span>
+                                                }
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @using (Html.BeginForm("Delete", "BienThe", new { area = "Admin" }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('Xóa biến thể này?');" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", ct.MaChiTietSP)
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        Sản phẩm chưa có biến thể nào nên khách chưa mua được. Hãy thêm size/màu ở khung bên phải.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thêm mới -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-dark text-white fw-bold">Thêm biến thể</div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Add", "BienThe", new { area = "Admin" }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("maSanPham", sp.MaSanPham)
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">Size</label>
+                            <select name="maKichThuoc" class="form-select" required>
+                                @foreach (var k in kichThuocs)
+                                {
+                                    <option value="@k.MaKichThuoc">@k.TenKichThuoc</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">Màu</label>
+                            <select name="maMauSac" class="form-select" required>
+                                @foreach (var m in mauSacs)
+                                {
+                                    <option value="@m.MaMauSac">@m.TenMauSac</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Số lượng tồn</label>
+                            <input type="number" name="soLuongTon" value="10" min="0" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold">+ Thêm biến thể</button>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header fw-bold">Chưa có size / màu bạn cần?</div>
+                <div class="card-body">
+                    @using (Html.BeginForm("AddSize", "BienThe", new { area = "Admin" }, FormMethod.Post, new { @class = "d-flex gap-2 mb-3" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("maSanPham", sp.MaSanPham)
+                        <input type="text" name="tenKichThuoc" class="form-control form-control-sm" placeholder="Size mới (vd: XXL)" maxlength="20" required />
+                        <button type="submit" class="btn btn-sm btn-outline-dark text-nowrap">Thêm size</button>
+                    }
+                    @using (Html.BeginForm("AddMau", "BienThe", new { area = "Admin" }, FormMethod.Post, new { @class = "d-flex gap-2" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("maSanPham", sp.MaSanPham)
+                        <input type="text" name="tenMauSac" class="form-control form-control-sm" placeholder="Màu mới (vd: Đỏ)" maxlength="50" required />
+                        <input type="color" name="maMauHex" value="#cc0000" class="form-control form-control-color form-control-sm" style="width: 44px;" title="Chọn màu hiển thị" />
+                        <button type="submit" class="btn btn-sm btn-outline-dark text-nowrap">Thêm màu</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

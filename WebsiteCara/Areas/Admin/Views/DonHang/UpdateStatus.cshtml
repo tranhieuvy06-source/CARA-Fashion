@@ -1,0 +1,12 @@
+﻿// POST: Admin/DonHang/UpdateStatus (Xử lý lưu trạng thái đơn hàng từ View Details)
+[HttpPost]
+public ActionResult UpdateStatus(int id, string trangThai)
+{
+    DonHang donHang = db.DonHangs.Find(id);
+    if (donHang != null)
+    {
+        donHang.TrangThai = trangThai;
+        db.SaveChanges();
+    }
+    return RedirectToAction("Details", new { id = id });
+}

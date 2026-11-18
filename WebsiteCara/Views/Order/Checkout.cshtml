@@ -1,0 +1,155 @@
+﻿@{
+    ViewBag.Title = "Thanh toán & Đặt hàng";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user = ViewBag.User as WebsiteCara.Models.NguoiDung;
+    var cart = ViewBag.Cart as List<WebsiteCara.Models.CartItem>;
+    decimal tongTien = ViewBag.TongTien ?? 0;
+
+    // Cấu hình VietQR - MBBank
+    string bankId = "MB";
+    string accountNo = "0375546662";
+    string accountName = "DOAN ANH DU";
+    long amount = (long)tongTien;
+    string memo = "Thanh toan Cara " + (user != null ? user.DienThoai : "");
+
+    string qrUrl = $"https://img.vietqr.io/image/{bankId}-{accountNo}-compact2.png?amount={amount}&addInfo={Uri.EscapeDataString(memo)}&accountName={Uri.EscapeDataString(accountName)}";
+}
+
+<div class="container my-5">
+    <h3 class="fw-bold mb-4 text-uppercase text-center">Xác Nhận Đặt Hàng</h3>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @using (Html.BeginForm("Checkout", "Order", FormMethod.Post, new { id = "orderForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="row g-4">
+            <!-- Cột 1: Thông tin giao hàng & hình thức thanh toán -->
+            <div class="col-md-7">
+                <div class="card shadow-sm border-0 p-4 mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Thông Tin Giao Hàng</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Họ và tên người nhận</label>
+                        <input type="text" name="hoTenNguoiNhan" class="form-control" value="@(user != null ? user.HoTen : "")" required placeholder="Nhập họ tên người nhận" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Số điện thoại nhận hàng</label>
+                        <input type="tel" name="dienThoaiNhan" class="form-control" value="@(user != null ? user.DienThoai : "")" required placeholder="Nhập số điện thoại" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Địa chỉ nhận hàng</label>
+                        <textarea name="diaChiGiao" class="form-control" rows="3" required placeholder="Nhập địa chỉ nhận hàng cụ thể">@(user != null ? user.DiaChi : "")</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Ghi chú đơn hàng (không bắt buộc)</label>
+                        <textarea name="ghiChu" class="form-control" rows="2" placeholder="Lưu ý cho người giao hàng..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Lựa chọn hình thức thanh toán -->
+                <div class="card shadow-sm border-0 p-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Phương Thức Thanh Toán</h5>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="phuongThucThanhToan" id="paymentCod" value="COD" checked>
+                        <label class="form-check-label fw-bold" for="paymentCod">
+                            Thanh toán khi nhận hàng (COD)
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="phuongThucThanhToan" id="paymentQR" value="ChuyenKhoanQR">
+                        <label class="form-check-label fw-bold" for="paymentQR">
+                            Chuyển khoản qua quét mã QR (MBBank)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột 2: Tóm tắt đơn hàng -->
+            <div class="col-md-5">
+                <div class="card shadow-sm border-0 p-4 bg-light">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Đơn Hàng Của Bạn</h5>
+
+                    <ul class="list-group list-group-flush mb-3">
+                        @if (cart != null)
+                        {
+                            foreach (var item in cart)
+                            {
+                                <li class="list-group-item bg-transparent d-flex justify-content-between lh-sm px-0">
+                                    <div>
+                                        <h6 class="my-0 fw-bold">@item.TenSanPham</h6>
+                                        <small class="text-muted">Size: @item.KichThuoc | Màu: @item.MauSac | SL: @item.SoLuong</small>
+                                    </div>
+                                    <span class="text-muted fw-bold">@string.Format("{0:N0} đ", item.ThanhTien)</span>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <div class="d-flex justify-content-between fs-5 fw-bold border-top pt-3 text-danger">
+                        <span>Tổng tiền thanh toán:</span>
+                        <span>@string.Format("{0:N0} đ", tongTien)</span>
+                    </div>
+
+                    <div class="mt-4 d-grid gap-2">
+                        <!-- Nút xem QR -->
+                        <button type="button" class="btn btn-outline-primary py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#qrModal">
+                            <i class="bi bi-qr-code-scan me-1"></i> Xem mã QR thanh toán (MBBank)
+                        </button>
+
+                        <!-- Nút xác nhận đặt hàng -->
+                        <button type="submit" class="btn btn-dark btn-lg w-100 py-3 fw-bold">
+                            XÁC NHẬN ĐẶT HÀNG
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal hiển thị mã VietQR MBBank -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-3 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold w-100 text-uppercase" id="qrModalLabel">Quét Mã QR MBBank</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center my-2">
+                    <img src="@qrUrl" alt="Mã VietQR MBBank" class="img-fluid rounded border shadow-sm" style="max-height: 380px;" />
+                </div>
+
+                <div class="bg-light rounded p-3 text-start small mt-3">
+                    <p class="mb-1"><strong>Ngân hàng:</strong> Ngân hàng Quân Đội (MBBank)</p>
+                    <p class="mb-1"><strong>Chủ tài khoản:</strong> DOAN ANH DU</p>
+                    <p class="mb-1"><strong>Số tài khoản:</strong> 0375546662</p>
+                    <p class="mb-1"><strong>Số tiền:</strong> <span class="text-danger fw-bold">@string.Format("{0:N0} đ", tongTien)</span></p>
+                    <p class="mb-0"><strong>Nội dung CK:</strong> <span class="text-primary fw-bold">@memo</span></p>
+                </div>
+                <div class="alert alert-info py-2 px-3 small mt-2 mb-0">
+                    Mở app ngân hàng bất kỳ để quét mã VietQR tự điền đúng số tiền và thông tin.
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-3 pb-3">
+                <!-- Nút submit form trực tiếp không cần JS -->
+                <button type="submit" form="orderForm" class="btn btn-dark btn-lg w-100 py-3 fw-bold text-uppercase">
+                    ĐÃ CHUYỂN KHOẢN XONG
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
